@@ -314,6 +314,3 @@ exploit_contract.setlisting(listing_id) # does not work
 >> TypeError: AbstractContract._abstract_function_call() got multiple values for argument 'signer'
 
 exploit_contract.setlisting(l=listing_id) # works
-
-
-[END OF GUIDE]
