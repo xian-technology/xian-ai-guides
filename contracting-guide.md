@@ -390,9 +390,9 @@ Current important limits:
 
 Current byte-based costs:
 
-- reads: **1 stamp / byte**
-- writes: **25 stamps / byte**
-- return values: **1 stamp / byte**
+- reads: **1 chi / byte**
+- writes: **25 chi / byte**
+- return values: **1 chi / byte**
 
 Practical implication:
 
