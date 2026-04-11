@@ -1,0 +1,39 @@
+name: Validate
+
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Validate guide assets
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          markdown_paths = sorted(Path(".").glob("*.md"))
+          if not markdown_paths:
+              raise SystemExit("expected at least one markdown guide")
+          for path in markdown_paths:
+              path.read_text(encoding="utf-8")
+              print(f"ok  {path}")
+
+          for path in sorted(Path(".").glob("*.json")):
+              json.loads(path.read_text(encoding="utf-8"))
+              print(f"ok  {path}")
+          PY
