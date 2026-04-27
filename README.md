@@ -10,6 +10,18 @@ This repo is a content set, not an application. It contains no runtime
 code — just the prompts and references LLMs need to stay aligned with
 current Xian behavior.
 
+## Guide Usage Flow
+
+```mermaid
+flowchart LR
+  User["User prompt"] --> LLM["LLM session"]
+  Guides["Selected guide files"] --> LLM
+  LLM --> Contract["Contract code"]
+  LLM --> Query["BDS GraphQL query"]
+  LLM --> Tests["Runtime-aware tests"]
+  Runtime["Current Xian behavior"] --> Guides
+```
+
 ## Quick Start
 
 Upload the relevant file(s) to an LLM and reference them in your prompt.
