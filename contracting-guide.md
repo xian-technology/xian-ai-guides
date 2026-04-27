@@ -10,7 +10,7 @@ Use it as a **hard rules + safe defaults** guide for humans and LLMs.
 
 - Xian contracts use a **restricted Python subset**, not unrestricted Python.
 - Contracts are parsed by the node's pinned CPython runtime.
-  Current repos target **Python 3.12+** and are being validated on **3.14**.
+  Current repos target **Python 3.14+** and are being validated on **3.14**.
 - Do **not** rely on newest Python features just because the host Python
   supports them. Write only the Xian subset described below.
 - Contract execution must stay **deterministic** across validators.
