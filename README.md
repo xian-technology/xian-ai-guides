@@ -71,7 +71,14 @@ including the block height, timestamp, sender, recipient, and amount.
 - review contract code or queries for inconsistencies with the current
   runtime surface
 
-## Related Repos
+## Validation
+
+Guides are content. The validation gate is a careful re-read against
+current behavior in `xian-contracting` and the indexed BDS surface when
+something changes there. When a guide diverges from the current Xian
+stack, update it in the same change set.
+
+## Related Docs
 
 - [`../xian-contracting/README.md`](../xian-contracting/README.md) — contracting runtime that the guide describes
 - [`../xian-py/README.md`](../xian-py/README.md) — Python SDK with the indexed BDS query helpers
