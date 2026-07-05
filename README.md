@@ -58,8 +58,9 @@ including the block height, timestamp, sender, recipient, and amount.
   language semantics, state types, decorators, standard library bridge,
   common patterns, and gotchas. Use this when prompting for contract
   generation, refactoring, or review.
-- `bds_graphql_schema.json` — full BDS GraphQL schema dump. Use this
-  when prompting for indexed queries (blocks, transactions, events,
+- `bds_graphql_schema.json` — full BDS GraphQL schema dump from the
+  stack-managed read-only BDS GraphQL surface. Use this when prompting for
+  indexed queries (blocks, transactions, addresses, events, shielded outputs,
   state history, balances, developer rewards, etc.).
 
 ## Typical Use Cases
