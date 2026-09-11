@@ -65,10 +65,11 @@ including the block height, timestamp, sender, recipient, and amount.
   state history, balances, developer rewards, etc.).
 - [testnet-first-node-agent.md](testnet-first-node-agent.md) — coordinator
   instructions for a fresh testnet, a separately funded treasury, released
-  Docker deployment, and a public participant handoff.
+  Docker deployment with BDS, GraphQL, and dashboard, and a public participant handoff.
 - [testnet-join-agent.md](testnet-join-agent.md) — share with participants
   alongside the coordinator's verified bundle to sync a full node and,
-  optionally, complete validator admission.
+  optionally, complete validator admission. Indexed query services and the
+  dashboard are enabled by default; parallel transaction execution is disabled.
 
 ## Typical Use Cases
 

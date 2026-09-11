@@ -5,6 +5,12 @@ independently received expected hash to the participant's agent. It is
 self-contained for joining; the coordinator's private setup files are not
 needed. The full-node flow does not require becoming a validator.
 
+The default participant node includes BDS/PostgreSQL indexing, read-only
+GraphQL/GraphiQL, and the dashboard, so participants can inspect the chain.
+Parallel transaction execution and Prometheus/Grafana sidecars remain disabled.
+GraphQL is an explicit companion service because the pinned Ansible deployment
+does not deploy it automatically when BDS is enabled.
+
 ## Objective and required inputs
 
 Deploy this participant's own Linux node using the coordinator's exact genesis
@@ -25,6 +31,7 @@ Obtain missing inputs before dependent work:
 
 An always-on host with SSD is appropriate. For light testing, 4 vCPU, 8 GiB RAM,
 and 100 GiB SSD is a starting estimate; monitor actual load and storage growth.
+Budget for PostgreSQL, GraphQL, dashboard memory, and the BDS recovery spool.
 The released image supports Linux amd64 and arm64; use the coordinator's
 verified image index digest for native platform selection.
 
@@ -49,6 +56,8 @@ Confirm:
 - the release assets and `operator-tooling.json` agree with the manifest
 - bootstrap contact is `<P2P node ID>@<host>:26656`; it is not a validator key
 - no snapshot/state-sync trust inputs are assumed when replaying from genesis
+- pinned PostgreSQL and GraphQL image provenance plus the non-secret GraphQL
+  companion template and role-init script; never the coordinator's credentials
 
 Verify release asset/image signatures using the selected stack release's
 `docs/RELEASES.md`. Do not replace a pinned image with a tag or update the
@@ -106,14 +115,15 @@ xian network join "$NODE_NAME" \
   --base-dir "$RUN_DIR" --network "$NETWORK" \
   --network-manifest "$BUNDLE_DIR/manifest.json" \
   --generate-validator-key --node-image-mode registry \
-  --no-enable-bds --no-enable-dashboard --no-enable-monitoring \
+  --enable-bds --enable-dashboard --no-enable-monitoring \
+  --dashboard-host 127.0.0.1 --dashboard-port 8080 \
   --no-enable-pruning --no-parallel-execution-enabled \
   --tx-fee-mode paid_metered \
   --stack-dir "$STACK_DIR" --configs-dir "$CONFIGS_DIR" \
   --home "$RUN_DIR/homes/$NODE_NAME"
 ```
 
-This explicit flow assumes the coordinator retained the lean paid/serial
+This explicit flow assumes the coordinator retained the indexed paid/serial
 posture. If the handoff specifies different execution or fee settings, reconcile
 them before initializing; participants must not invent chain policy overrides.
 Do not run the stock generated participant scripts blindly: their defaults
@@ -127,7 +137,14 @@ Before initialization, edit `nodes/<NODE_NAME>.json` with a JSON-aware tool:
 - set `operator_profile=shared_network`, `monitoring_profile=none`, and
   `advanced.cometbft.allow_cors=false`
 - verify the two digest-pinned image references, block policy, fee policy,
-  serial execution, disabled state sync, and disabled optional services
+  serial execution, disabled state sync, BDS and dashboard enabled, and
+  Prometheus/Grafana disabled
+
+Keep deployment-owned BDS host/user/password/DSN/RPC/spool fields empty/default
+in the profile; credentials and bindings belong in private inventory/vault.
+If the participant explicitly requests a smaller full node, use
+`--no-enable-bds --no-enable-dashboard` and skip GraphQL/database setup. That
+opt-out changes local query services, not the shared genesis or execution policy.
 
 Do this explicitly even if the manifest contains persistent peers: the CLI's
 node initialization and Ansible deployment consume profile peer settings.
@@ -187,6 +204,7 @@ all:
           xian_node_profile: /absolute/private/run/nodes/participant-1.json
           xian_node_home_archive: /absolute/private/run/node-home.tar.gz
       vars:
+        xian_project_name: xian
         xian_deploy_root: /srv/xian-testnet
         xian_deploy_topology: integrated
         xian_node_home_replace: false
@@ -194,11 +212,21 @@ all:
         xian_rpc_port: 26657
         xian_p2p_bind_host: 0.0.0.0
         xian_p2p_port: 26656
+        xian_dashboard_bind_host: 127.0.0.1
+        xian_dashboard_port: 8080
+        xian_bds_user: xian
+        xian_bds_password: "{{ vault_xian_bds_password }}"
+        xian_postgres_image: "postgres:17.10@sha256:REPLACE_WITH_VERIFIED_DIGEST"
 ```
 
 Use the pinned repo's `ansible.cfg` and example variable structure, keeping
 these RPC/nonreplacement overrides. Confirm the remote home is unused before
 upload: archive extraction can overwrite files even with replacement disabled.
+Replace the PostgreSQL digest marker with the coordinator's verified image
+pin; `shared_network` validation requires a digest. Generate a unique strong
+`vault_xian_bds_password` for this host and configure private Vault/secret-store
+access for Ansible. Do not reuse a coordinator password or put secrets in the
+profile/public bundle. Preserve PostgreSQL data and the BDS recovery spool.
 Run from the `xian-deploy` checkout with `INVENTORY` set to the inventory path:
 
 ```bash
@@ -213,7 +241,9 @@ keys. Never start the prepared home simultaneously on controller and server.
 For a same-machine Linux controller use an explicit local Ansible inventory.
 
 Allow administrative access and inbound P2P TCP 26656 as authorized. Keep RPC
-26657, application/Comet metrics, and optional dashboard/database ports private.
+26657, dashboard 8080, GraphQL/GraphiQL 5000, and application/Comet metrics private.
+PostgreSQL 5432 must have no host-published port. Access the query UI and
+dashboard through SSH tunnels.
 Check actual Docker-published bindings and reachability from another machine.
 Confirm the runtime uses the handoff's digest, persistent home mount, restart
 policy, and the unchanged genesis. Deployment reconciliation resets
@@ -224,6 +254,126 @@ and recheck health. Repeat after future deploy/upgrade reconciliation; restart
 alone does not regenerate the config. Verify persistent peers as well.
 After initial installation,
 use status/restart/upgrade workflows; do not upload the initial home again.
+
+### Required GraphQL companion and indexed-service checks
+
+Run this after the main Ansible deployment has healthy PostgreSQL and BDS.
+The pinned `xian-deploy` commit does not include GraphQL in its Compose file or
+health report. Do not mark GraphQL complete solely because `health.yml` passes.
+Keep the companion in a separate private directory/project so subsequent
+Ansible rendering does not erase it.
+
+1. Use the selected stack commit's `docker/postgraphile.Dockerfile`, the entire
+   `docker/postgraphile/` directory (including its npm lock and Xian presets),
+   and `docker/postgres/init-postgraphile-role.sh`. The coordinator builds the
+   GraphQL image once per supported architecture on a build/controller machine.
+   Use a copied Dockerfile with its `FROM node:24-alpine` resolved to a recorded
+   immutable base digest; do not edit the pinned source checkout. Build using
+   that stack checkout as context and retain `npm ci --omit=dev`. The released
+   node images do not themselves contain the PostGraphile server.
+2. Record the stack commit, base digest, copied Dockerfile hash, and resulting
+   image identity in the public tooling record. Deliver an image archive with
+   SHA-256 and expected image ID per architecture, or an accepted registry
+   digest. Participants verify and load/pull this artifact; they do not rebuild
+   from a floating Node image. This is a query-service image, not a replacement
+   consensus image. Do not claim that the custom artifact has the official
+   node-release signature; authenticate it through the coordinator's handoff.
+3. On each server, create a mode-0700 `GRAPHQL_DIR`, for example
+   `/srv/xian-testnet/graphql`, with a `secrets/` subdirectory. Copy the pinned
+   role-init script there. Use a separate random hex password for a local
+   `xian_graphql` read-only database role. Generate mode-0600
+   `secrets/graphql-init.env` containing `PGHOST=postgres`, `PGPORT=5432`,
+   `PGDATABASE=xian`, `PGUSER=xian`, `PGPASSWORD=<this node's BDS password>`,
+   `XIAN_BDS_USER=xian`, `XIAN_POSTGRAPHILE_USER=xian_graphql`,
+   `XIAN_POSTGRAPHILE_PASSWORD=<read-only password>`, and
+   `XIAN_POSTGRAPHILE_STATEMENT_TIMEOUT_MS=10000`. Populate secrets locally from
+   the private store without printing them. If inventory changes the database
+   owner/name, use those actual values consistently.
+4. Set `POSTGRES_IMAGE` to the same verified digest as the main deployment and
+   run the script against its database, after PostgreSQL is ready:
+
+```bash
+docker run --rm --network xian_xian-db \
+  --env-file "$GRAPHQL_DIR/secrets/graphql-init.env" \
+  --mount "type=bind,src=$GRAPHQL_DIR/init-postgraphile-role.sh,dst=/init-role.sh,readonly" \
+  "$POSTGRES_IMAGE" /bin/bash /init-role.sh
+```
+
+The script grants SELECT access to existing and future BDS tables, with
+restricted role attributes and query timeouts. Retain/recreate its private
+credential file only for administration; do not mount it into GraphQL.
+
+5. Create a separate mode-0600 `secrets/graphql.env` with only
+   `POSTGRAPHILE_CONNECTION=postgres://xian_graphql:<read-only password>@postgres:5432/xian`.
+   Random hex passwords avoid URI/Compose escaping problems. Verify SQL writes
+   are denied for this role. GraphQL must never use the BDS owner credential.
+6. Save this `compose.yml` in `GRAPHQL_DIR`, and place the verified image
+   digest/reference (or loaded `sha256:<image ID>`) in `.env` as `GRAPHQL_IMAGE`.
+   Preload/pull that image explicitly; the template will not fetch a substitute.
+
+```yaml
+services:
+  postgraphile:
+    image: ${GRAPHQL_IMAGE:?set the verified GraphQL image}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    mem_limit: 1g
+    env_file:
+      - ./secrets/graphql.env
+    environment:
+      GRAPHILE_ENV: production
+      POSTGRAPHILE_HOST: 0.0.0.0
+      POSTGRAPHILE_PORT: "5000"
+      POSTGRAPHILE_SCHEMA: public
+      POSTGRAPHILE_DISABLE_DEFAULT_MUTATIONS: "true"
+      POSTGRAPHILE_SIMPLE_COLLECTIONS: omit
+      POSTGRAPHILE_BODY_SIZE_LIMIT_BYTES: "1048576"
+      POSTGRAPHILE_SCHEMA_WAIT_TIMEOUT_SECONDS: "300"
+    command: ["/usr/src/app/start-postgraphile.sh"]
+    ports:
+      - "127.0.0.1:5000:5000"
+    networks: [db, app]
+networks:
+  db:
+    external: true
+    name: xian_xian-db
+  app:
+    external: true
+    name: xian_xian-net
+```
+
+The network names assume `xian_project_name: xian` in the main inventory.
+Verify them with Docker and substitute the actual names if the project name
+was changed. Keep the main PostgreSQL service as the only database; the
+companion must not start a second database or node.
+
+```bash
+docker compose --project-directory "$GRAPHQL_DIR" \
+  -p xian-graphql -f "$GRAPHQL_DIR/compose.yml" config -q
+docker compose --project-directory "$GRAPHQL_DIR" \
+  -p xian-graphql -f "$GRAPHQL_DIR/compose.yml" up -d
+```
+
+7. Check BDS through target-loopback dashboard
+   `http://127.0.0.1:8080/api/abci_query/bds_status`: require a healthy database
+   and worker, increasing `indexed.indexed_height`, and a draining backlog.
+   Wait until indexing reaches the smoke transaction's block before querying
+   it through GraphQL; consensus finality and indexed visibility are separate.
+8. Open the dashboard at `http://127.0.0.1:8080/`, and inspect its chain/BDS
+   status. Query `http://127.0.0.1:5000/graphql` with
+   `{"query":"{ allBlocks(first: 1, orderBy: HEIGHT_DESC) { nodes { height blockHash } } }"}`.
+   Require actual indexed rows matching the node, not merely HTTP 200. Verify
+   GraphiQL at `http://127.0.0.1:5000/graphiql` and inspect the schema to confirm
+   no default mutations are exposed. These are server-loopback URLs; use SSH
+   forwarding from the controller/browser, with alternate local ports if needed.
+9. Record separate companion status/restart commands and logs. Main Ansible
+   health checks do not test GraphQL. For a full shutdown, stop the companion
+   before `xian-deploy` removes its networks; bring it back after the main
+   deployment is healthy. Restart/reboot checks must cover all three services
+   and preserve PostgreSQL data. Back up the database consistently and retain
+   the BDS recovery spool; a node-home-only backup does not include indexed data.
 
 ## 4. Verify syncing and receive test XIAN
 
@@ -348,6 +498,9 @@ stopped-node state privately. For an active validator's departure, follow
 Return a short report with chain ID and genesis hash, image digest, node name,
 P2P/validator public identities, peer count, sync height, common-height hash
 comparison, health/restart result, wallet public address, and test receipt.
+Include BDS indexed height/lag, a successful indexed GraphQL query, GraphiQL
+and dashboard access/health, and the query-service image identity. For an
+explicit service opt-out, identify which local query features are unavailable.
 State either `synced full node` or `active validator` with the corresponding
 evidence. Identify any pending funding, admission, or external reachability
 check explicitly. Include local operational paths and restart/status commands
