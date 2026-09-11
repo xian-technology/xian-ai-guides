@@ -106,7 +106,11 @@ in the public `operator-tooling.json` sidecar:
 | --- | --- | --- |
 | xian-stack | `6ac0259f9d8fe4a8fb7730f35bb0052b45e33969` | v0.3.3 release |
 | xian-cli | `62db44a1b24bb0c3a7987265548e380f951e4c1e` | CLI 0.2.1 with refreshed dependency lock |
-| xian-deploy | `23aab505ed5594d4c07e3e414d07989812ead356` | inspected deployment playbooks |
+| xian-deploy | `a60a1b0523cb04c3ac6635f67ef055774d2bcf7e` | inspected deployment playbooks |
+
+The pinned deploy revision runs its configuration container with a Python
+entrypoint override and handles null BDS enqueue-error fields in health reports.
+Both fixes are required for the verified deployment flow.
 
 The CLI **v0.2.1 tag predates the dependency-lock refresh**. Do not combine that
 tag's old frozen lock with the v0.3.3 component checkouts. Pin the CLI commit

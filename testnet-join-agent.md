@@ -66,7 +66,9 @@ CLI package 0.2.1, ABCI 0.9.3, Contracting 1.1.3, VM core 0.1.2, SDK 0.5.2,
 and compiler core 0.2.0. The controller CLI pin is
 `62db44a1b24bb0c3a7987265548e380f951e4c1e` (refreshed lock), not the older
 v0.2.1 tag. The inspected deploy pin is
-`23aab505ed5594d4c07e3e414d07989812ead356`.
+`a60a1b0523cb04c3ac6635f67ef055774d2bcf7e`. This deployment revision runs the configuration
+container with a Python entrypoint override and accepts a null BDS enqueue-error
+field in health reports. Earlier revisions can fail these steps on a healthy node.
 
 The coordinator's accepted handoff remains authoritative. If it is still based
 on v0.3.2, resolve the release mismatch with the coordinator rather than silently
