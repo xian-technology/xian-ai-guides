@@ -2,7 +2,8 @@
 
 `xian-ai-guides` is a small, focused collection of context files that
 help LLMs generate accurate Xian smart contracts, GraphQL queries
-against the indexed BDS surface, and matching test cases. Upload these
+against the indexed BDS surface, matching test cases, and operator-managed
+testnet setup. Upload these
 files to an LLM (Claude, ChatGPT, LM Studio, …) as context, then ask
 it to produce contracts, queries, or tests.
 
@@ -62,6 +63,12 @@ including the block height, timestamp, sender, recipient, and amount.
   stack-managed read-only BDS GraphQL surface. Use this when prompting for
   indexed queries (blocks, transactions, addresses, events, shielded outputs,
   state history, balances, developer rewards, etc.).
+- [testnet-first-node-agent.md](testnet-first-node-agent.md) — coordinator
+  instructions for a fresh testnet, a separately funded treasury, released
+  Docker deployment, and a public participant handoff.
+- [testnet-join-agent.md](testnet-join-agent.md) — share with participants
+  alongside the coordinator's verified bundle to sync a full node and,
+  optionally, complete validator admission.
 
 ## Typical Use Cases
 
@@ -75,8 +82,9 @@ including the block height, timestamp, sender, recipient, and amount.
 ## Validation
 
 Guides are content. The validation gate is a careful re-read against
-current behavior in `xian-contracting` and the indexed BDS surface when
-something changes there. When a guide diverges from the current Xian
+the owning implementation: `xian-contracting`, the indexed BDS surface,
+or the pinned CLI/configs/node/deployment repos for operator guides. When a
+guide diverges from the current Xian
 stack, update it in the same change set.
 
 ## Related Docs
