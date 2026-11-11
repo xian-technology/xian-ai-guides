@@ -5,10 +5,10 @@ independently received expected hash to the participant's agent. It is
 self-contained for joining; the coordinator's private setup files are not
 needed. The full-node flow does not require becoming a validator.
 
-The worked v0.3.3 handoff below runs V1. A V2 handoff supplies its own
+The worked v0.3.3 handoff below is an archived V1 test configuration. A V2 handoff supplies its own
 V2-built image, genesis hash and chain ID. Join with the coordinator's exact
 artifacts for that chain. Current SDKs default to V2. To query or sign for
-the worked V1 network with a current Python SDK, pass
+the V1 test fixture with a current Python SDK, pass
 `config=XianClientConfig(vm_profile="xian_vm_v1")`; with a current TypeScript
 SDK, set `vmProfile: "xian_vm_v1"`.
 

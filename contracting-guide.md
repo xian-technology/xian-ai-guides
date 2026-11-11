@@ -689,8 +689,10 @@ Notes:
 
 ## 18. Local Testing
 
-Use `xian-tech-contracting[v2]` for native local tests. Select the profile on
-`ContractingClient` explicitly. A bare local client uses V1.
+Use the `xian-contracting` source checkout for native V2 tests. From its
+parent directory run `uv sync --project xian-contracting --frozen --group dev`.
+The standard `ContractingClient` compiles and runs contracts on `xian_vm_v2`.
+[Contract source setup](https://github.com/xian-technology/xian-docs-web/blob/main/getting-started/dev-environment.md#contract-only-setup)
 
 ```python
 from pathlib import Path
@@ -702,7 +704,7 @@ CONTRACT = Path("contracts/con_example.s.py").read_text()
 
 @pytest.fixture
 def client(tmp_path):
-    with ContractingClient(signer="alice", storage_home=tmp_path, vm_profile="xian_vm_v2") as c:
+    with ContractingClient(signer="alice", storage_home=tmp_path) as c:
         c.submit(CONTRACT, name="con_example")
         yield c
 
@@ -726,12 +728,14 @@ Test guidance:
   duplicate actions when relevant
 - assert stored state and emitted behavior, not just that a call returns
 
-For a source check with `xian-tech-linter[vm]`, select the same target.
+Use the sibling `xian-linter` checkout's environment for linting. From the
+workspace, run `uv sync --project xian-linter --frozen`. Its standard
+check validates the same V2 target.
 
 ```python
 from xian_linter import lint_code_sync
 
-errors = lint_code_sync(CONTRACT, mode="xian_vm_v2")
+errors = lint_code_sync(CONTRACT)
 assert not errors, errors
 ```
 
@@ -740,10 +744,13 @@ assert not errors, errors
 For network deployment, submit source. Do not submit client-generated IR as the
 trusted payload.
 
-The current Python SDK defaults to V2 for signing, simulation, and decoding.
+Use the matching sibling `xian-py` checkout with
+`uv sync --project xian-py --frozen`. This SDK defaults to V2 for signing,
+simulation, and decoding. [Pinned SDK setup](https://github.com/xian-technology/xian-docs-web/blob/main/tools/xian-py.md#install)
+
 Use Python integers and `decimal.Decimal` constructed from text for generic
 arguments. A generic argument `"1.25"` is a contract string. Binary floats
-are rejected. For an existing V1 chain, configure
+are rejected. To exercise an archived V1 test configuration, pass
 `XianClientConfig(vm_profile="xian_vm_v1")` on its client.
 
 ```python
