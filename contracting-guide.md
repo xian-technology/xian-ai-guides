@@ -129,6 +129,8 @@ plain.
 - stdlib or builtin-module imports such as `os`, `sys`, `json`, `datetime`,
   `decimal`
 - names that start or end with `_`
+- non-ASCII identifiers (names, parameters, attributes, keyword arguments);
+  string contents may contain any text
 - one-line compound statements such as `if ok: return value`
 - set literals and set comprehensions. Use `set(...)` if you truly need a set.
 - dangerous/general builtins such as `eval`, `exec`, `getattr`, `dir`, `vars`,
@@ -325,9 +327,17 @@ token_balances = ForeignHash(
 
 - `Variable`, `Hash`, `ForeignVariable`, `ForeignHash`, and `LogEvent` must be
   declared explicitly.
+- `Variable`, `Hash`, and `LogEvent` may only be called as the whole value of a
+  module-level assignment, `name = Variable(...)`; calling them inside a
+  function or nesting them in another expression is rejected (`E022`).
 - Tuple unpacking for ORM declarations is rejected.
 - For `Variable`, `Hash`, and `LogEvent`, do **not** pass `contract=` or
   `name=`; the compiler/runtime injects them.
+- Pass storage options as keyword arguments only: positional, `*args`, and
+  `**kwargs` arguments are rejected (`E023`). `LogEvent` is the exception: its
+  event name and params are positional.
+- `ForeignVariable` and `ForeignHash` require `foreign_contract=` and
+  `foreign_name=` and reject `contract=`/`name=` (`E023`).
 - `ForeignVariable` and `ForeignHash` are read-only.
 - Export arguments must not shadow module-level ORM variable names.
 
