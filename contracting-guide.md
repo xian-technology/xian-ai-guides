@@ -41,7 +41,7 @@ Good contract output is usually:
 
 - Xian contracts use a **restricted Python subset**, not unrestricted Python.
 - Contract source is Python-like source, but current network execution targets
-  **`xian_vm_v1`**, not a general Python VM.
+  **`xian_vm_v2`**, not a general Python VM.
 - Python tooling in `xian-contracting` parses, lints, compiles, and tests the
   source; validators admit source and derive canonical Xian VM IR.
 - Current Python tooling targets **Python 3.14+** and is validated on **3.14**.
@@ -156,8 +156,8 @@ The current builtin allowlist is:
 
 ```text
 Exception False None True abs all any ascii bin bool bytearray bytes chr
-dict divmod filter float format frozenset hex int isinstance issubclass len
-list map max min oct ord pow range reversed round set sorted str sum tuple zip
+dict divmod filter format frozenset hex int isinstance issubclass len
+list map max min oct ord pow range reversed set sorted str sum tuple zip
 ```
 
 Anything outside that list should be treated as unavailable unless it is an
@@ -253,7 +253,7 @@ Allowed annotation bases:
 - `datetime.datetime`
 - `datetime.timedelta`
 - `dict`
-- `float`
+- `decimal`
 - `frozenset`
 - `int`
 - `list`
@@ -275,38 +275,26 @@ are checked at runtime.
 If a function returns a valid encoded value that is awkward to annotate, omit
 the return annotation.
 
-## 9. Decimal / Float Semantics
+## 9. Numbers
 
-This is one of the most important Xian-specific rules.
-
-- Contract authors use normal Python `float` syntax for user-facing decimal
-  values.
-- At runtime, those values execute as deterministic decimal-backed values.
-- Float literals are preserved from source and compiled into Xian decimal
-  values.
-
-Examples:
+Use `int` for integer counts and `decimal` for fractional amounts. Decimal
+literals retain their source digits. Both literal and input decimal values
+must be exactly representable with at most 30 fractional digits and magnitude
+below 10^61. Integers must have magnitude below 2^512. Division produces a
+decimal truncated toward zero at scale 30. Integer `//` rounds toward negative
+infinity. Integer `%` follows the divisor's sign. Decimal multiplication
+truncates toward zero at scale 30. Use `quantize(value, places, mode)` for
+settlement at a smaller scale. Its modes are `toward_zero`, `floor`, `ceil`,
+and `half_even`. Use `sqrt(value)` for a square root truncated to the decimal
+grid. For integer amounts, `mul_div_floor(a, b, divisor)` and
+`mul_div_ceil(a, b, divisor)` allow a wider product before dividing by a
+positive integer.
 
 ```python
 price = 10.5
 fee = decimal("0.0025")
 total = price + fee
 ```
-
-Current numeric policy:
-
-- up to 61 whole digits
-- up to 30 fractional digits
-- extra fractional digits are truncated toward zero
-- values outside the supported range raise overflow and abort execution
-
-This means:
-
-- there is no silent overflow clamping
-- `float` is the correct user-facing decimal type
-- do not expose integer base units just to avoid floating-point problems unless
-  the product explicitly needs integer units
-- avoid binary-floating-point assumptions
 
 ## 10. Storage Rules
 
@@ -395,7 +383,7 @@ TransferEvent = LogEvent(
     {
         "from": {"type": str, "idx": True},
         "to": {"type": str, "idx": True},
-        "amount": {"type": float},
+        "amount": {"type": decimal},
     },
 )
 ```
@@ -409,7 +397,7 @@ TransferEvent = LogEvent(
     {
         "from": indexed(str),
         "to": indexed(str),
-        "amount": (int, float, decimal),
+        "amount": (int, decimal),
     },
 )
 ```
@@ -418,7 +406,7 @@ Emit events with exactly the declared fields:
 
 ```python
 @export
-def transfer(to: str, amount: float):
+def transfer(to: str, amount: decimal):
     TransferEvent({"from": ctx.caller, "to": to, "amount": amount})
 ```
 
@@ -430,7 +418,7 @@ Hard rules:
 - each emitted value must match its declared type
 - each parameter value must be at most 1024 bytes once string-encoded
 
-Common event value types are `str`, `int`, `float`, `bool`, and
+Common event value types are `str`, `int`, `decimal`, `bool`, and
 decimal-backed values. The runtime also supports `bytes`, `bytearray`, and
 contracting set/frozenset values, but prefer simple scalar event fields for
 indexers and wallets.
@@ -454,7 +442,7 @@ indexers and wallets.
 
 ```python
 @export
-def pay(token_name: str, to: str, amount: float):
+def pay(token_name: str, to: str, amount: decimal):
     token = importlib.import_module(token_name)
     token.transfer(amount=amount, to=to)
 ```
@@ -616,14 +604,14 @@ TransferEvent = LogEvent(
     {
         "from": {"type": str, "idx": True},
         "to": {"type": str, "idx": True},
-        "amount": {"type": float},
+        "amount": {"type": decimal},
     },
 )
 
 balances = Hash(default_value=0)
 
 @export
-def transfer(amount: float, to: str):
+def transfer(amount: decimal, to: str):
     assert amount > 0, "Amount must be positive"
     sender = ctx.caller
     sender_balance = balances[sender]
@@ -639,12 +627,12 @@ def transfer(amount: float, to: str):
 approvals = Hash(default_value=0)
 
 @export
-def approve(amount: float, to: str):
+def approve(amount: decimal, to: str):
     assert amount >= 0, "Cannot approve negative amount"
     approvals[ctx.caller, to] = amount
 
 @export
-def transfer_from(amount: float, to: str, main_account: str):
+def transfer_from(amount: decimal, to: str, main_account: str):
     assert amount > 0, "Amount must be positive"
     allowed = approvals[main_account, ctx.caller]
     balance = balances[main_account]
@@ -704,7 +692,7 @@ CONTRACT = Path("contracts/con_example.s.py").read_text()
 
 @pytest.fixture
 def client():
-    c = ContractingClient(signer="alice")
+    c = ContractingClient(signer="alice", vm_profile="xian_vm_v2")
     c.submit(CONTRACT, name="con_example")
     return c
 
@@ -747,10 +735,10 @@ With `xian-py`:
 ```python
 from pathlib import Path
 
-from xian_py import Wallet, Xian
+from xian_py import Wallet, Xian, XianClientConfig
 
 wallet = Wallet("your_private_key")
-xian = Xian("http://127.0.0.1:26657", wallet=wallet)
+xian = Xian("http://127.0.0.1:26657", wallet=wallet, config=XianClientConfig(vm_profile="xian_vm_v2"))
 source = Path("contracts/con_example.s.py").read_text()
 
 tx = xian.deploy_contract(
@@ -783,7 +771,7 @@ Before returning generated Xian contract code:
 7. Annotate every `@export` argument.
 8. Use only allowed annotation bases, or allowed subscripted annotations.
 9. Use `@export(typecheck=True)` when runtime type enforcement matters.
-10. Use `float` for user-facing decimal amounts.
+10. Use `decimal` for user-facing decimal amounts.
 11. Never rely on wall-clock time; use `now`.
 12. Never use `in` on `Hash`.
 13. Keep hash keys free of `:` and `.`.
@@ -811,7 +799,7 @@ Safe mental model:
 
 - write ordinary-looking Python
 - stay inside the restricted subset
-- use `float` for deterministic decimal-backed user values
+- use `decimal` for deterministic decimal-backed user values
 - use `now` as chain time
 - use explicit state and assertions
 - test behavior with `ContractingClient`
