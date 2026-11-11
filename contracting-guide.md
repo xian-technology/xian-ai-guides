@@ -129,7 +129,6 @@ plain.
 - stdlib or builtin-module imports such as `os`, `sys`, `json`, `datetime`,
   `decimal`
 - names that start or end with `_`
-- semicolons
 - one-line compound statements such as `if ok: return value`
 - set literals and set comprehensions. Use `set(...)` if you truly need a set.
 - dangerous/general builtins such as `eval`, `exec`, `getattr`, `dir`, `vars`,
@@ -137,17 +136,15 @@ plain.
 
 ### Augmented Assignment Nuance
 
-`+=` and `-=` are normal. Augmented multiplication, exponentiation, and shifts
-are rejected:
+Augmented assignment is normal (`+=`, `-=`, `**=`, `<<=`, `>>=`, ...) except
+augmented multiplication, which the linter rejects (`xian.lint.E001`):
 
 ```python
 # bad
 value *= rate
-value **= 2
 
 # good
 value = value * rate
-value = value ** 2
 ```
 
 ## 5. Allowed Builtins
