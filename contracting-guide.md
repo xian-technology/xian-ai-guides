@@ -42,8 +42,8 @@ Good contract output is usually:
 - Xian contracts use a **restricted Python subset**, not unrestricted Python.
 - Contract source is Python-like source, but current network execution targets
   **`xian_vm_v2`**, not a general Python VM.
-- Python tooling in `xian-contracting` parses, lints, compiles, and tests the
-  source; validators admit source and derive canonical Xian VM IR.
+- The Rust compiler admits contract source and derives Xian VM IR. The native
+  VM executes it on validators and in V2 local tests.
 - Current Python tooling targets **Python 3.14+** and is validated on **3.14**.
 - Do not rely on newest host-Python features unless this guide says they are
   accepted by the Xian source subset and VM policy.
@@ -289,6 +289,15 @@ and `half_even`. Use `sqrt(value)` for a square root truncated to the decimal
 grid. For integer amounts, `mul_div_floor(a, b, divisor)` and
 `mul_div_ceil(a, b, divisor)` allow a wider product before dividing by a
 positive integer.
+
+A `decimal` parameter accepts a decimal or an exactly representable integer.
+An `int` parameter accepts integers. Booleans and strings stay distinct.
+`//` and `%` require integers. `int(-1.9)` truncates to `-1`.
+Use `quantize(1.005, 2, "half_even")` for ties-to-even settlement (result
+`1`), or `quantize(-1.005, 2, "floor")` to round down (result `-1.01`).
+An out-of-range result or division by zero fails the call and rolls back its
+writes and events. The [numeric specification](https://github.com/xian-technology/xian-meta/blob/main/docs/NUMERIC_PROFILE_V2.md)
+includes exact bounds and signed arithmetic examples.
 
 ```python
 price = 10.5
@@ -680,7 +689,8 @@ Notes:
 
 ## 18. Local Testing
 
-Use `ContractingClient` for local contract behavior tests:
+Use `xian-tech-contracting[v2]` for native local tests. Select the profile on
+`ContractingClient` explicitly. A bare local client uses V1.
 
 ```python
 from pathlib import Path
@@ -691,10 +701,10 @@ from contracting.local import ContractingClient
 CONTRACT = Path("contracts/con_example.s.py").read_text()
 
 @pytest.fixture
-def client():
-    c = ContractingClient(signer="alice", vm_profile="xian_vm_v2")
-    c.submit(CONTRACT, name="con_example")
-    return c
+def client(tmp_path):
+    with ContractingClient(signer="alice", storage_home=tmp_path, vm_profile="xian_vm_v2") as c:
+        c.submit(CONTRACT, name="con_example")
+        yield c
 
 def test_owner_can_transfer_ownership(client):
     contract = client.get_contract_proxy("con_example")
@@ -716,13 +726,13 @@ Test guidance:
   duplicate actions when relevant
 - assert stored state and emitted behavior, not just that a call returns
 
-For a quick linter-only check in tooling:
+For a source check with `xian-tech-linter[vm]`, select the same target.
 
 ```python
-from contracting.compilation.linter import Linter
+from xian_linter import lint_code_sync
 
-errors = Linter().check(contract_source)
-assert errors is None
+errors = lint_code_sync(CONTRACT, mode="xian_vm_v2")
+assert not errors, errors
 ```
 
 ## 19. Deployment And Source Submission
@@ -730,15 +740,19 @@ assert errors is None
 For network deployment, submit source. Do not submit client-generated IR as the
 trusted payload.
 
-With `xian-py`:
+The current Python SDK defaults to V2 for signing, simulation, and decoding.
+Use Python integers and `decimal.Decimal` constructed from text for generic
+arguments. A generic argument `"1.25"` is a contract string. Binary floats
+are rejected. For an existing V1 chain, configure
+`XianClientConfig(vm_profile="xian_vm_v1")` on its client.
 
 ```python
 from pathlib import Path
 
-from xian_py import Wallet, Xian, XianClientConfig
+from xian_py import Wallet, Xian
 
 wallet = Wallet("your_private_key")
-xian = Xian("http://127.0.0.1:26657", wallet=wallet, config=XianClientConfig(vm_profile="xian_vm_v2"))
+xian = Xian("http://127.0.0.1:26657", wallet=wallet)
 source = Path("contracts/con_example.s.py").read_text()
 
 tx = xian.deploy_contract(

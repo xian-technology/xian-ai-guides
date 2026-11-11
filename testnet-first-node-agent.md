@@ -4,6 +4,13 @@ Give this entire file to the agent responsible for the coordinator's node.
 The companion `testnet-join-agent.md` is for participants. These are operator
 instructions, not an announcement of a live network.
 
+The worked release pins below create a **V1** network. For a fresh
+`xian_vm_v2` network, use a V2 node build, a V2 genesis contract bundle and
+a distinct chain ID. Record their immutable refs and resulting genesis hash
+in the handoff. Current SDKs default to V2. An application using a current SDK
+with the pinned V1 network must select `xian_vm_v1`. The release's original
+controller and SDK can keep their matched pins.
+
 ## Objective and defaults
 
 Set up a fresh, operator-managed testnet with one initial validator, a separate

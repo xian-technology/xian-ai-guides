@@ -5,6 +5,13 @@ independently received expected hash to the participant's agent. It is
 self-contained for joining; the coordinator's private setup files are not
 needed. The full-node flow does not require becoming a validator.
 
+The worked v0.3.3 handoff below runs V1. A V2 handoff supplies its own
+V2-built image, genesis hash and chain ID. Join with the coordinator's exact
+artifacts for that chain. Current SDKs default to V2. To query or sign for
+the worked V1 network with a current Python SDK, pass
+`config=XianClientConfig(vm_profile="xian_vm_v1")`; with a current TypeScript
+SDK, set `vmProfile: "xian_vm_v1"`.
+
 The default participant node includes BDS/PostgreSQL indexing, read-only
 GraphQL/GraphiQL, and the dashboard, so participants can inspect the chain.
 Parallel transaction execution and Prometheus/Grafana sidecars remain disabled.

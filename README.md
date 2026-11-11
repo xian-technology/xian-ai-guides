@@ -63,6 +63,8 @@ including the block height, timestamp, sender, recipient, and amount.
   stack-managed read-only BDS GraphQL surface. Use this when prompting for
   indexed queries (blocks, transactions, addresses, events, shielded outputs,
   state history, balances, developer rewards, etc.).
+- The worked **V1** testnet runbooks below pin stack v0.3.3. A fresh V2 network
+  needs its own matched genesis, node and SDK configuration.
 - [testnet-first-node-agent.md](testnet-first-node-agent.md) — coordinator
   instructions for a fresh testnet, a separately funded treasury, released
   Docker deployment with BDS, GraphQL, and dashboard, and a public participant handoff.
