@@ -553,22 +553,25 @@ import Python stdlib crypto modules.
 
 Current important limits:
 
-- recursion depth: 1024
+- execution depth (recursion plus cross-contract reentry): 128 frames
 - max hash dimensions: 16
 - max key size: 1024 bytes
 - max contract source submission size: 128 KiB
 - max aggregate write capacity per transaction: 128 KiB
-- max encoded return value size: 128 KiB
-- max sequence / binary allocation size: 128 KiB
+- max `range(...)` / sequence repetition length: 131,072 entries
+- max binary allocation / string repetition size: 128 KiB
 - max integer string chars: 8192
 - max modular pow exponent bits: 8192
 
-Current byte-based costs:
+There is no general return-value size cap; return bytes are metered.
 
-- reads: 1 chi / byte
-- writes: 25 chi / byte
-- transaction bytes: 1 chi / byte
-- return values: 1 chi / byte
+Current byte-based costs, in raw meter units (1,000 raw units = 1 chi;
+`chi_used = raw // 1000 + 5`):
+
+- reads: 2 units / byte
+- writes: 25 units / byte
+- transaction bytes: 1 unit / byte
+- return values: 1 unit / byte
 
 Practical implication:
 
