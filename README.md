@@ -57,21 +57,31 @@ including the block height, timestamp, sender, recipient, and amount.
 
 - `contracting-guide.md` — comprehensive Contracting reference for LLMs:
   language semantics, state types, decorators, standard library bridge,
-  common patterns, and gotchas. Use this when prompting for contract
-  generation, refactoring, or review.
+  common patterns, and gotchas. It describes the current `xian_vm_v2`
+  runtime on `main` (execution revision `xvm-execution-14`, gas schedule
+  `xvm-gas-6`). Use this when prompting for contract generation, refactoring,
+  or review.
 - `bds_graphql_schema.json` — full BDS GraphQL schema dump from the
   stack-managed read-only BDS GraphQL surface. Use this when prompting for
   indexed queries (blocks, transactions, addresses, events, shielded outputs,
-  state history, balances, developer rewards, etc.).
-- The archived **V1** test configuration in these runbooks pins stack v0.3.3. A fresh V2 network
-  needs its own matched genesis, node and SDK configuration.
+  state and state history, state patches, rewards, etc.). Its tables and
+  columns match the current BDS schema. JSON columns such as event `data` and
+  state values hold V2 tagged numbers: a decimal is `{"__fixed__": "1.5"}` and
+  an integer outside the safe JavaScript range is
+  `{"__big_int__": "1152921504606846976"}`.
 - [testnet-first-node-agent.md](testnet-first-node-agent.md) — coordinator
   instructions for a fresh testnet, a separately funded treasury, released
   Docker deployment with BDS, GraphQL, and dashboard, and a public participant handoff.
 - [testnet-join-agent.md](testnet-join-agent.md) — share with participants
   alongside the coordinator's verified bundle to sync a full node and,
   optionally, complete validator admission. Indexed query services and the
-  dashboard are enabled by default; parallel transaction execution is disabled.
+  dashboard are enabled by default; transactions execute serially.
+
+Both operator runbooks pin the latest published node release, stack v0.3.3,
+which runs the archived **V1** runtime. Run them only with their pinned
+controller CLI, configs and SDK. The V2 runtime described by the contracting
+guide is not released yet; a fresh V2 network needs its own matched genesis,
+node image and SDK configuration.
 
 ## Typical Use Cases
 
