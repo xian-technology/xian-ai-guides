@@ -823,9 +823,9 @@ Rules:
 - names must be lowercase ASCII with digits/underscores only
 - names are capped at 64 characters
 - source size is capped by the runtime submission limit
-- omit `chi` to let the SDK simulate and add headroom; an explicit `chi` must
-  stay within the chain's `max_tx_chi` (200,000 by default), or CheckTx rejects
-  the transaction
+- omit `chi` to let the SDK simulate and supply exactly the simulated chi; an
+  explicit `chi` must stay within the chain's `max_tx_chi` (200,000 by
+  default), or CheckTx rejects the transaction
 - do not hardcode public RPC endpoints or public chain IDs in generic examples
 
 ## 20. LLM Checklist
