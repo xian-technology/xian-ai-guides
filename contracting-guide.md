@@ -295,7 +295,10 @@ An `int` parameter accepts integers. Booleans and strings stay distinct.
 Use `quantize(1.005, 2, "half_even")` for ties-to-even settlement (result
 `1`), or `quantize(-1.005, 2, "floor")` to round down (result `-1.01`).
 An out-of-range result or division by zero fails the call and rolls back its
-writes and events. The [numeric specification](https://github.com/xian-technology/xian-meta/blob/main/docs/NUMERIC_PROFILE_V2.md)
+writes and events. `str(value)` of a decimal is plain fixed-point text with no
+exponent and no trailing fractional zeros (`str(decimal("1e6"))` is
+`"1000000"`, `str(decimal("1.50"))` is `"1.5"`), so it is safe to embed in
+signed messages. The [numeric specification](https://github.com/xian-technology/xian-meta/blob/main/docs/NUMERIC_PROFILE_V2.md)
 includes exact bounds and signed arithmetic examples.
 
 ```python
@@ -580,12 +583,35 @@ Current byte-based costs, in raw meter units (1,000 raw units = 1 chi;
 - transaction bytes: 1 unit / byte
 - return values: 1 unit / byte
 
+Work that grows with the size of a value is charged as element work, 24 raw
+units per unit (execution revision `xvm-execution-12`, gas schedule
+`xvm-gas-6`): one unit per comparison, per container member copied or
+allocated, per node of a value passed across a contract boundary, per 64 bytes
+of text copied, per 128 bytes compared, per 8 bytes searched by string methods
+such as `find`, `replace`, `split(sep)` or slicing, and per 2 bytes of
+per-character work such as `upper()` or `isdigit()`. Dictionary lookups and
+updates use a hash index, so they cost the same at any dictionary size.
+`Hash.all()`, `Hash.clear()` and `clone_from` charge 2,560 raw units per entry
+they scan.
+
+Per-transaction budget:
+
+- a chain's genesis fee policy caps one transaction at `max_tx_chi` (200,000
+  chi by default) and one block at `max_block_chi` (500,000 by default, counted
+  over the chi each transaction supplies)
+- the VM never runs one V2 transaction past 1,000,000 chi
+- clients should supply a simulated estimate plus a small margin, never a
+  large fixed budget
+
 Practical implication:
 
 - storage keys and values should stay compact
 - large return payloads are metered and capped
 - avoid write-heavy loops over unbounded user-controlled data
 - cache repeated reads into local variables and write once
+- design every export so one call stays well below 200,000 chi; paginate scans
+  and batch work across calls instead of looping over unbounded state
+- grow lists with `append`, not `items += [x]`, which copies the whole list
 
 ## 16. Safe Patterns
 
@@ -787,6 +813,9 @@ Rules:
 - names must be lowercase ASCII with digits/underscores only
 - names are capped at 64 characters
 - source size is capped by the runtime submission limit
+- omit `chi` to let the SDK simulate and add headroom; an explicit `chi` must
+  stay within the chain's `max_tx_chi` (200,000 by default), or CheckTx rejects
+  the transaction
 - do not hardcode public RPC endpoints or public chain IDs in generic examples
 
 ## 20. LLM Checklist
@@ -807,7 +836,8 @@ Before returning generated Xian contract code:
 12. Never use `in` on `Hash`.
 13. Keep hash keys free of `:` and `.`.
 14. Treat `ForeignVariable` and `ForeignHash` as read-only.
-15. Keep return payloads, event values, and writes small.
+15. Keep return payloads, event values, and writes small, and keep each export
+    well within the 200,000-chi default per-transaction cap.
 16. Call `random.seed()` before deterministic random helpers.
 17. Prefer explicit, flat, assert-driven logic over clever Python tricks.
 18. Include local tests for permissions and invariants when producing a contract.
