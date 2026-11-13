@@ -343,6 +343,10 @@ token_balances = ForeignHash(
   `foreign_name=` and reject `contract=`/`name=` (`E023`).
 - `ForeignVariable` and `ForeignHash` are read-only.
 - Export arguments must not shadow module-level ORM variable names.
+- Keep storage names short. A storage key is `contract.name` (plus `:key`
+  parts for a hash) and holds at most 511 UTF-8 bytes, so admission rejects a
+  `Variable` name longer than 446 bytes and a `Hash` name longer than 445
+  bytes (`E024`).
 
 ### `Variable`
 
@@ -354,10 +358,13 @@ settings = Variable(default_value={})
 queue = Variable(default_value=[])
 ```
 
-`Variable` supports `.get()` and `.set(value)`. For stored dict/list values it
-also supports convenience operations such as item access, `update`, `append`,
-`extend`, `insert`, `remove`, `clear`, and `pop`. These rewrite the stored
-object, so keep values compact.
+`Variable` supports `.get()` and `.set(value)`. For a stored dict it also
+supports `update(...)`; for a stored list it supports `append`, `extend`,
+`insert`, `remove`, `clear`, and `pop`. These rewrite the whole stored object,
+so keep values compact. Item access and item assignment on the `Variable`
+itself (`settings["mode"] = mode`) are not supported: read the value with
+`.get()`, change the local copy, and write it back with `.set(...)`, or use
+`settings.update({"mode": mode})`.
 
 ### `Hash`
 
@@ -373,7 +380,9 @@ Hash behavior:
 
 - max 16 dimensions
 - each key component must not contain `:` or `.`
-- final encoded key length must be at most 1024 bytes
+- the whole storage key (`contract.hash:key1:key2`, UTF-8 bytes) must be at
+  most 511 bytes; a write with a longer key fails the transaction, and a
+  lookup with a longer key finds nothing
 - hash slices are forbidden
 - `key in my_hash` is forbidden
 - missing keys return `default_value` if provided, otherwise `None`
@@ -473,7 +482,7 @@ def pay(token_name: str, to: str, amount: decimal):
 - not start with `_`
 - not be digits-only
 
-System contracts like `currency`, `members`, and `dao` do not use `con_`.
+System contracts like `currency`, `validators`, and `dao` do not use `con_`.
 User-deployed contracts should normally use names like `con_token`,
 `con_escrow`, or `con_staking`.
 
@@ -561,11 +570,12 @@ import Python stdlib crypto modules.
 
 ## 15. Limits And Metering
 
-Current important limits:
+Current important limits (execution revision `xvm-execution-14`, gas schedule
+`xvm-gas-6`, contract admission `xian-admission-3`):
 
 - execution depth (recursion plus cross-contract reentry): 128 frames
 - max hash dimensions: 16
-- max key size: 1024 bytes
+- max storage key size (whole key, UTF-8): 511 bytes
 - max contract source submission size: 128 KiB
 - max aggregate write capacity per transaction: 128 KiB
 - max `range(...)` / sequence repetition length: 131,072 entries
@@ -584,12 +594,12 @@ Current byte-based costs, in raw meter units (1,000 raw units = 1 chi;
 - return values: 1 unit / byte
 
 Work that grows with the size of a value is charged as element work, 24 raw
-units per unit (execution revision `xvm-execution-12`, gas schedule
-`xvm-gas-6`): one unit per comparison, per container member copied or
-allocated, per node of a value passed across a contract boundary, per 64 bytes
-of text copied, per 128 bytes compared, per 8 bytes searched by string methods
-such as `find`, `replace`, `split(sep)` or slicing, and per 2 bytes of
-per-character work such as `upper()` or `isdigit()`. Dictionary lookups and
+units per unit (gas schedule `xvm-gas-6`): one unit per comparison, per
+container member copied or allocated, per node of a value passed across a
+contract boundary, per 64 bytes of text copied, per 128 bytes compared, per 8
+bytes searched or copied by string operations such as `find`, `in`,
+`replace`, `split(sep)`, `join` or slicing, and per 2 bytes of per-character
+work such as `upper()`, `isdigit()` or `int(text)`. Dictionary lookups and
 updates use a hash index, so they cost the same at any dictionary size.
 `Hash.all()`, `Hash.clear()` and `clone_from` charge 2,560 raw units per entry
 they scan.
