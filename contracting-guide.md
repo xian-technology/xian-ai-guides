@@ -284,7 +284,9 @@ decimal truncated toward zero at scale 30. Integer `//` rounds toward negative
 infinity. Integer `%` follows the divisor's sign. Decimal multiplication
 truncates toward zero at scale 30. Use `quantize(value, places, mode)` for
 settlement at a smaller scale. Its modes are `toward_zero`, `floor`, `ceil`,
-and `half_even`. Use `sqrt(value)` for a square root truncated to the decimal
+and `half_even`. `round(x)` and `round(x, n)` follow Python's half-to-even
+rounding (`round(decimal)` is an int, `round(decimal, n)` a decimal, `n` may
+be negative). Use `sqrt(value)` for a square root truncated to the decimal
 grid. For integer amounts, `mul_div_floor(a, b, divisor)` and
 `mul_div_ceil(a, b, divisor)` allow a wider product before dividing by a
 positive integer.
@@ -559,6 +561,9 @@ def roll() -> int:
     random.seed()
     return random.randint(1, 6)
 ```
+
+`random.random()` returns a decimal in [0, 1) with 30 fractional digits
+(`randbelow(10**30) / 10**30`), not Python's 53-bit binary float.
 
 Use deterministic random only for low-stakes or game-like logic. It is
 predictable from public inputs and must not be used for secret generation,
