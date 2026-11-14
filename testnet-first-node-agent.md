@@ -374,12 +374,17 @@ Ansible rendering does not erase it.
    role-init script there. Use a separate random hex password for a local
    `xian_graphql` read-only database role. Generate mode-0600
    `secrets/graphql-init.env` containing `PGHOST=postgres`, `PGPORT=5432`,
-   `PGDATABASE=xian`, `PGUSER=xian`, `PGPASSWORD=<this node's BDS password>`,
-   `XIAN_BDS_USER=xian`, `XIAN_POSTGRAPHILE_USER=xian_graphql`,
+   `PGDATABASE=xian`, `PGUSER=xian`,
+   `XIAN_BDS_PASSWORD_FILE=/run/secrets/xian_bds_password`,
+   `XIAN_POSTGRAPHILE_USER=xian_graphql`,
    `XIAN_POSTGRAPHILE_PASSWORD=<read-only password>`, and
-   `XIAN_POSTGRAPHILE_STATEMENT_TIMEOUT_MS=10000`. Populate secrets locally from
-   the private store without printing them. If inventory changes the database
-   owner/name, use those actual values consistently.
+   `XIAN_POSTGRAPHILE_STATEMENT_TIMEOUT_MS=10000`. Do not copy the BDS
+   password: the script reads it from the deployment's own `bds-password`
+   secret file (`xian_runtime_secret_dir/bds-password`, by default
+   `/srv/xian-testnet/runtime/secrets/bds-password` with the `xian_deploy_root` above), mounted read-only below. Populate
+   the read-only password locally from the private store without printing it.
+   If inventory changes the database owner/name, use those actual values
+   consistently.
 4. Set `POSTGRES_IMAGE` to the same verified digest as the main deployment and
    run the script against its database, after PostgreSQL is ready:
 
@@ -387,6 +392,7 @@ Ansible rendering does not erase it.
 docker run --rm --network xian_xian-db \
   --env-file "$GRAPHQL_DIR/secrets/graphql-init.env" \
   --mount "type=bind,src=$GRAPHQL_DIR/init-postgraphile-role.sh,dst=/init-role.sh,readonly" \
+  --mount "type=bind,src=/srv/xian-testnet/runtime/secrets/bds-password,dst=/run/secrets/xian_bds_password,readonly" \
   "$POSTGRES_IMAGE" /bin/bash /init-role.sh
 ```
 
