@@ -40,9 +40,9 @@ Enable BDS/PostgreSQL indexing, read-only GraphQL with GraphiQL, and the node
 dashboard by default. Keep paid metered transactions, serial execution,
 periodic empty blocks with a five-second interval, no pruning, and no state
 sync. Actual block cadence also depends on consensus timings. Prometheus/Grafana
-sidecars remain disabled; `monitoring_profile=none` does not disable the node
-dashboard. Keep RPC, GraphQL, dashboard, and metrics private. Preserve blocks
-so early participants can replay from genesis.
+sidecars remain disabled (`services.monitoring.enabled=false`); that does not
+disable the node dashboard. Keep RPC, GraphQL, dashboard, and metrics private.
+Preserve blocks so early participants can replay from genesis.
 
 The pinned Ansible deployment supports BDS and the dashboard, but does not
 deploy PostGraphile. The explicit GraphQL companion procedure below is part
@@ -214,9 +214,9 @@ xian network create "$NETWORK" \
 ```
 
 No all-in-one development template is needed. Inspect the resulting profile;
-set `operator_profile` to `shared_network`, `monitoring_profile` to `none`,
-and `advanced.cometbft.allow_cors` to `false`. Add the verified release manifest
-as `node_release_manifest` in both the network manifest and bootstrap profile.
+set `operator_profile` to `shared_network` and `advanced.cometbft.allow_cors`
+to `false`. Add the verified release manifest as `node_release_manifest` in
+both the network manifest and bootstrap profile.
 Validate both with the pinned CLI model readers. These are profile/manifest
 edits, not edits to the genesis state.
 

@@ -150,7 +150,7 @@ Before initialization, edit `nodes/<NODE_NAME>.json` with a JSON-aware tool:
 - put the coordinator's bootstrap entry in `p2p.persistent_peers`
 - retain only actual seed services in `p2p.seeds`; an ordinary bootstrap
   validator need not be listed as a seed
-- set `operator_profile=shared_network`, `monitoring_profile=none`, and
+- set `operator_profile=shared_network` and
   `advanced.cometbft.allow_cors=false`
 - verify the two digest-pinned image references, block policy, fee policy,
   serial execution, disabled state sync, BDS and dashboard enabled, and
