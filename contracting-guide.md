@@ -575,8 +575,8 @@ import Python stdlib crypto modules.
 
 ## 15. Limits And Metering
 
-Current important limits (execution revision `xvm-execution-14`, gas schedule
-`xvm-gas-6`, contract admission `xian-admission-3`):
+Current important limits (execution revision `xvm-execution-15`, gas schedule
+`xvm-gas-7`, contract admission `xian-admission-3`):
 
 - execution depth (recursion plus cross-contract reentry): 128 frames
 - max hash dimensions: 16
@@ -591,7 +591,7 @@ Current important limits (execution revision `xvm-execution-14`, gas schedule
 There is no general return-value size cap; return bytes are metered.
 
 Current byte-based costs, in raw meter units (1,000 raw units = 1 chi;
-`chi_used = raw // 1000 + 5`):
+execution chi is `raw // 1000 + 5`):
 
 - reads: 2 units / byte
 - writes: 25 units / byte
@@ -599,7 +599,7 @@ Current byte-based costs, in raw meter units (1,000 raw units = 1 chi;
 - return values: 1 unit / byte
 
 Work that grows with the size of a value is charged as element work, 24 raw
-units per unit (gas schedule `xvm-gas-6`): one unit per comparison, per
+units per unit (gas schedule `xvm-gas-7`): one unit per comparison, per
 container member copied or allocated, per node of a value passed across a
 contract boundary, per 64 bytes of text copied, per 128 bytes compared, per 8
 bytes searched or copied by string operations such as `find`, `in`,
@@ -609,6 +609,11 @@ updates use a hash index, so they cost the same at any dictionary size.
 `Hash.all()`, `Hash.clear()` and `clone_from` charge 2,560 raw units per entry
 they scan.
 
+Loading a module's canonical IR costs 2 raw units per byte of its IR and
+storage key, charged before parsing, once per module per transaction. Static
+imports and dynamic contract loads share that budget. Each transaction loads
+at most 512 modules and 16 MiB of aggregate IR, including with metering disabled.
+
 Per-transaction budget:
 
 - a chain's genesis fee policy caps one transaction at `max_tx_chi` (200,000
@@ -617,6 +622,10 @@ Per-transaction budget:
 - the VM never runs one V2 transaction past 1,000,000 chi
 - clients should supply a simulated estimate plus a small margin, never a
   large fixed budget
+- a paid transaction also charges half of supplied but unused chi, rounded
+  down. That surplus is burned; rewards split the execution fee. The paid
+  receipt's `chi_used` includes the unused-chi charge, while a simulation
+  reports the execution estimate
 
 Practical implication:
 

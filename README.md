@@ -58,8 +58,8 @@ including the block height, timestamp, sender, recipient, and amount.
 - `contracting-guide.md` — comprehensive Contracting reference for LLMs:
   language semantics, state types, decorators, standard library bridge,
   common patterns, and gotchas. It describes the current `xian_vm_v2`
-  runtime on `main` (execution revision `xvm-execution-14`, gas schedule
-  `xvm-gas-6`). Use this when prompting for contract generation, refactoring,
+  runtime on `main` (execution revision `xvm-execution-15`, gas schedule
+  `xvm-gas-7`). Use this when prompting for contract generation, refactoring,
   or review.
 - `bds_graphql_schema.json` — full BDS GraphQL schema dump from the
   stack-managed read-only BDS GraphQL surface. Use this when prompting for
