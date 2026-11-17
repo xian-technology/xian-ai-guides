@@ -533,22 +533,51 @@ Bad assumption:
 
 - "this should auto-execute at exactly 12:00 UTC"
 
-Time lock pattern:
+Those comparisons evaluate an explicit deadline or an already anchored unlock.
+For a minimum custody period, use this time lock pattern:
+
+A minimum custody period needs the canonical `time_checkpoints` protocol-1
+service and a matching fresh-chain node keeper. The first block after idle can
+carry a stale consensus timestamp. Request the current positive height before
+receiving funds, then wait for its immutable successor anchor. A pending anchor
+is `None`; keep the position locked until it is available. The node records it
+automatically, with no extra user activation transaction.
+
+Read readiness and resolved timers through direct contract/RPC views. BDS index
+height, zero lag and reindexing do not attest to system-only keeper transitions.
+
+This fixed seven-day gate refuses to reset an existing position. It demonstrates
+timing/state guards and transfers no tokens; add verified escrow receipt and
+settlement around those guards when implementing custody.
 
 ```python
-unlock_at = Hash(default_value=None)
+import time_checkpoints
+
+lock_heights = Hash(default_value=None)
 
 @export
-def lock(days: int):
-    assert days > 0, "Invalid duration"
-    unlock_at[ctx.caller] = now + datetime.timedelta(days=days)
+def lock():
+    assert lock_heights[ctx.caller] is None, "Already locked"
+    version = time_checkpoints.get_protocol_version()
+    assert isinstance(version, int) and not isinstance(version, bool) and version == 1, (
+        "Unsupported time service"
+    )
+    height = time_checkpoints.request_anchor()
+    assert isinstance(height, int) and not isinstance(height, bool) and height == block_num, (
+        "Invalid checkpoint height"
+    )
+    lock_heights[ctx.caller] = height
+    # Receive and verify escrow only after these guards.
 
 @export
 def unlock():
-    target = unlock_at[ctx.caller]
-    assert target is not None, "Nothing locked"
-    assert now >= target, "Too early"
-    unlock_at[ctx.caller] = None
+    height = lock_heights[ctx.caller]
+    assert height is not None, "Nothing locked"
+    anchor = time_checkpoints.get_anchor(height=height)
+    assert anchor is not None, "Time anchor pending"
+    assert now >= anchor + datetime.timedelta(days=7), "Too early"
+    lock_heights[ctx.caller] = None
+    # Settle position state before any token payout.
 ```
 
 ## 14. Randomness And Crypto
