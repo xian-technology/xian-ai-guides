@@ -77,11 +77,11 @@ including the block height, timestamp, sender, recipient, and amount.
   optionally, complete validator admission. Indexed query services and the
   dashboard are enabled by default; transactions execute serially.
 
-Both operator runbooks pin the latest published node release, stack v0.3.3,
-which runs the archived **V1** runtime. Run them only with their pinned
-controller CLI, configs and SDK. The V2 runtime described by the contracting
-guide is not released yet; a fresh V2 network needs its own matched genesis,
-node image and SDK configuration.
+Both operator runbooks pin stack v0.3.3 and the archived **V1** runtime. Run
+them only with their pinned controller CLI, configs and SDK. For the current
+V2 codebase, follow the [node installation guide](../xian-docs-web/node/installation.md)
+and select matching genesis, node image and SDK revisions; these V1 pins do
+not establish current release availability.
 
 ## Typical Use Cases
 
