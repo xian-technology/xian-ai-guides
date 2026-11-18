@@ -62,7 +62,9 @@ including the block height, timestamp, sender, recipient, and amount.
   `xvm-gas-7`). Use this when prompting for contract generation, refactoring,
   or review.
 - `bds_graphql_schema.json` — full BDS GraphQL schema dump from the
-  stack-managed read-only BDS GraphQL surface. Use this when prompting for
+  stack-managed read-only BDS GraphQL surface using the native PostGraphile v5
+  Amber preset. Global object IDs use `id`; numeric database IDs use `rowId`.
+  JSONB fields return native JSON values. Use this when prompting for
   indexed queries (blocks, transactions, addresses, events, shielded outputs,
   state and state history, state patches, rewards, etc.). Its tables and
   columns match the current BDS schema. JSON columns such as event `data` and
