@@ -71,6 +71,8 @@ including the block height, timestamp, sender, recipient, and amount.
   state values hold V2 tagged numbers: a decimal is `{"__fixed__": "1.5"}` and
   an integer outside the safe JavaScript range is
   `{"__big_int__": "1152921504606846976"}`.
+  For trading, query `dexMarket(tokenA:, tokenB:)` for typed pool fills,
+  reserves, 24-hour totals and paginated candles in one operation.
 - [testnet-first-node-agent.md](testnet-first-node-agent.md) — coordinator
   instructions for a fresh testnet, a separately funded treasury, released
   Docker deployment with BDS, GraphQL, and dashboard, and a public participant handoff.
