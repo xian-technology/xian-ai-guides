@@ -421,6 +421,7 @@ services:
       - ./secrets/graphql.env
     environment:
       GRAPHILE_ENV: production
+      POSTGRAPHILE_ENFORCE_QUERY_LIMITS: "1"
       POSTGRAPHILE_HOST: 0.0.0.0
       POSTGRAPHILE_PORT: "5000"
       POSTGRAPHILE_SCHEMA: public
