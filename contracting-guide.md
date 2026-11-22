@@ -156,7 +156,8 @@ The current builtin allowlist is:
 ```text
 Exception False None True abs all any ascii bin bool bytearray bytes chr
 dict divmod filter format frozenset hex int isinstance issubclass len
-list map max min oct ord pow range reversed set sorted str sum tuple zip
+list map max min mul_div_ceil mul_div_floor oct ord pow quantize range
+reversed round set sorted sqrt str sum tuple zip
 ```
 
 Anything outside that list should be treated as unavailable unless it is an
@@ -605,7 +606,7 @@ import Python stdlib crypto modules.
 ## 15. Limits And Metering
 
 Current important limits (execution revision `xvm-execution-15`, gas schedule
-`xvm-gas-7`, contract admission `xian-admission-3`):
+`xvm-gas-7`, contract admission `xian-admission-4`):
 
 - execution depth (recursion plus cross-contract reentry): 128 frames
 - max hash dimensions: 16
@@ -617,7 +618,8 @@ Current important limits (execution revision `xvm-execution-15`, gas schedule
 - max integer string chars: 8192
 - max modular pow exponent bits: 8192
 
-There is no general return-value size cap; return bytes are metered.
+With metering enabled, the encoded value returned by the entry function must
+be smaller than 128 KiB.
 
 Current byte-based costs, in raw meter units (1,000 raw units = 1 chi;
 execution chi is `raw // 1000 + 5`):
@@ -625,7 +627,7 @@ execution chi is `raw // 1000 + 5`):
 - reads: 2 units / byte
 - writes: 25 units / byte
 - transaction bytes: 1 unit / byte
-- return values: 1 unit / byte
+- return values: 25 units / encoded byte
 
 Work that grows with the size of a value is charged as element work, 24 raw
 units per unit (gas schedule `xvm-gas-7`): one unit per comparison, per

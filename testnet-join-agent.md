@@ -9,7 +9,7 @@ The worked v0.3.3 handoff below is an archived V1 test configuration; stack
 v0.3.3 is the latest published node release and runs only `xian_vm_v1`. A V2
 handoff supplies its own V2-built image, genesis hash and chain ID. Join with
 the coordinator's exact artifacts for that chain. The pinned SDK 0.5.2 speaks
-V1 and has no VM profile setting. The unreleased source SDKs on `main` default
+V1 and has no VM profile setting. The source SDKs on `main` default
 to V2: to query or sign for the V1 test fixture with them, pass
 `config=XianClientConfig(vm_profile="xian_vm_v1")` in Python or set
 `vmProfile: "xian_vm_v1"` in TypeScript.

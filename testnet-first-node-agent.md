@@ -9,7 +9,7 @@ stack v0.3.3 is the latest published node release, and its nodes run only
 `xian_vm_v1`. For a fresh `xian_vm_v2` network, use a V2 node build, a V2
 genesis contract bundle and a distinct chain ID. Record their immutable refs
 and resulting genesis hash in the handoff. The pinned SDK 0.5.2 has no VM
-profile setting and speaks V1. The unreleased source SDKs on `main` default
+profile setting and speaks V1. The source SDKs on `main` default
 to V2; an application using them with the pinned V1 fixture must select
 `xian_vm_v1`. The release's original controller and SDK keep their matched
 pins.
@@ -17,8 +17,7 @@ pins.
 Run every command below with the pinned controller CLI. The current `main`
 CLI does not accept this guide's V1 commands: it removed the
 `--parallel-execution-enabled` flags (blocks always execute serially) and
-builds V2 genesis (execution revision `xvm-execution-14`), which the pinned
-V1 image cannot run. Do not mix the two.
+builds V2 genesis, which requires a matching V2 node image.
 
 ## Objective and defaults
 
