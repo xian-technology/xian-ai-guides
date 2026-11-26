@@ -4,9 +4,8 @@ Give this entire file to the agent responsible for the coordinator's node.
 The companion `testnet-join-agent.md` is for participants. These are operator
 instructions, not an announcement of a live network.
 
-The worked release pins below describe an archived **V1** test configuration:
-stack v0.3.3 is the latest published node release, and its nodes run only
-`xian_vm_v1`. For a fresh `xian_vm_v2` network, use a V2 node build, a V2
+The worked release pins below reproduce an archived **V1** test configuration
+using stack v0.3.3. For a fresh `xian_vm_v2` network, use a V2 node build, a V2
 genesis contract bundle and a distinct chain ID. Record their immutable refs
 and resulting genesis hash in the handoff. The pinned SDK 0.5.2 has no VM
 profile setting and speaks V1. The source SDKs on `main` default
@@ -25,15 +24,12 @@ Set up a fresh, operator-managed testnet with one initial validator, a separate
 treasury wallet, and a public handoff that lets other people sync their own
 nodes. Use the ordinary `local` genesis contract bundle with freshly generated
 keys. Its name describes a reusable bundle; it does not restrict the resulting
-chain to one machine. Do not join the checked-in `testnet` preset or reuse its
-fixture keys/genesis.
+chain to one machine. Generate fresh fixture keys and genesis for this network.
 
 Use the signed, digest-pinned **integrated Docker node image**, prepared with
 `xian-cli` and deployed to Linux with `xian-deploy`. The integrated image runs
 CometBFT and ABCI together. This is the maintained released-artifact path and
 avoids independently building different runtimes on participant servers.
-The split image is useful for separate service management; source builds are
-for development or a deliberately coordinated unreleased test.
 
 Enable BDS/PostgreSQL indexing, read-only GraphQL with GraphiQL, and the node
 dashboard by default. Keep paid metered transactions, serial execution,

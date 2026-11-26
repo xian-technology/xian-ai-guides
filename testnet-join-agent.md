@@ -5,9 +5,8 @@ independently received expected hash to the participant's agent. It is
 self-contained for joining; the coordinator's private setup files are not
 needed. The full-node flow does not require becoming a validator.
 
-The worked v0.3.3 handoff below is an archived V1 test configuration; stack
-v0.3.3 is the latest published node release and runs only `xian_vm_v1`. A V2
-handoff supplies its own V2-built image, genesis hash and chain ID. Join with
+The worked v0.3.3 handoff below reproduces an archived V1 test configuration.
+A V2 handoff supplies its own V2-built image, genesis hash and chain ID. Join with
 the coordinator's exact artifacts for that chain. The pinned SDK 0.5.2 speaks
 V1 and has no VM profile setting. The source SDKs on `main` default
 to V2: to query or sign for the V1 test fixture with them, pass
@@ -29,9 +28,8 @@ does not deploy it automatically when BDS is enabled.
 
 Deploy this participant's own Linux node using the coordinator's exact genesis
 and released Docker image, sync from the bootstrap peer, and verify a test
-transfer. Generate this participant's private keys locally. Do not generate a
-new network, genesis, or allocation, and do not use the checked-in `testnet`
-preset merely because it has that name.
+transfer. Generate this participant's private keys locally and keep the
+coordinator's network, genesis, and allocation.
 
 Obtain missing inputs before dependent work:
 
